@@ -99,12 +99,12 @@
                         cursor.continue();
                     }
                 } 
-        }
-        else {
-            (noDataCallback && typeof(noDataCallback) === "function") && noDataCallback();
-        }
+            }
+            else {
+                (noDataCallback && typeof(noDataCallback) === "function") && noDataCallback();
+            }
+        };
     };
-};
 
     /**
      * 范围：
@@ -137,17 +137,26 @@
      *
      * @return 
      */
-    MyIndexedDb.search = function(range, order) {
+    MyIndexedDb.search = function() {
+        var range = arguments[0] ? arguments[0] : '';
+        var order = arguments[0] ? arguments[0] : '';
+
+        var hasDataCallback = arguments[2] ? arguments[2] : (function(data){console.log(data); return true;});
+        var noDataCallback = arguments[3] ? arguments[3] : (function(){console.log("No more entries!")});
         var objectStore = MyIndexedDb.db.transaction(MyIndexedDb.dbName).objectStore(MyIndexedDb.dbName);
         var request = objectStore.openCursor(range, order);
-        request.onsuccess = function(event) {
+        objectStore.openCursor().onsuccess = function(event) {
             var cursor = event.target.result;
             if (cursor) {
-                console.log(cursor.value);
-                cursor.continue();
+                if(hasDataCallback && typeof(hasDataCallback) === "function"){
+                    var result = hasDataCallback(cursor);
+                    if (result) {
+                        cursor.continue();
+                    }
+                } 
             }
             else {
-                console.log("No more entries!");
+                (noDataCallback && typeof(noDataCallback) === "function") && noDataCallback();
             }
         };
     };
@@ -161,7 +170,7 @@
      *
      * @return 
      */
-    MyIndexedDb.updateFieldById = function (id, key, value) {
+    MyIndexedDb.updateFieldById = function () {
         var id = arguments[0] ? arguments[0] : '';
         var id = arguments[1] ? arguments[1] : '';
         var id = arguments[2] ? arguments[2] : '';
@@ -196,7 +205,7 @@
      *
      * @return 
      */
-    MyIndexedDb.updateById = function (id, data) {
+    MyIndexedDb.updateById = function () {
         var id = arguments[0] ? arguments[0] : '';
         if (id == '') {
             return false;
