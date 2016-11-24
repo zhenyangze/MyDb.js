@@ -9,18 +9,20 @@
         MyIndexedDb.dbVersion = dbVersion;
 
         var request = indexedDB.open(dbName, dbVersion);
+        var callback = arguments[2] ? arguments[2] : '';
+        var upgradeCallback = arguments[3] ? arguments[3] : '';
         request.onsuccess = function(e) {
             MyIndexedDb.db = request.result;
-            var callback = arguments[2] ? arguments[2] : '';
             if (callback != '') {
-                callback();
+                callback(e);
             }
         };
         request.onupgradeneeded = function(evt) {
-            var objStore = evt.currentTarget.result.createObjectStore(MyIndexedDb.dbName, {keyPath: "id"});
-            var callback = arguments[3] ? arguments[3] : '';
-            if (callback != '') {
+            if (upgradeCallback != '') {
                 callback(objStore);
+            } else {
+                //var objStore = evt.currentTarget.result.createObjectStore(MyIndexedDb.dbName, {keyPath: "id"});
+                var objStore = evt.currentTarget.result.createObjectStore(MyIndexedDb.dbName, {autoIncrement:true});
             }
         }
         request.onfailure = function(e) {
@@ -47,13 +49,8 @@
         var transaction = MyIndexedDb.db.transaction(MyIndexedDb.dbName, 'readwrite');
         var objStore = transaction.objectStore(MyIndexedDb.dbName);
         var request = objStore.add(data);
-        request.onsuccess = function(e) {
-            (successCallback && typeof(successCallback) === "function") && successCallback(data);
-        };
-        request.onerror = function (e) {
-            (errorCallback && typeof(errorCallback) === "function") && errorCallback(data);
-        };
-
+        request.onsuccess = successCallback;
+        request.onerror = errorCallback;
     };
 
     /**
@@ -68,23 +65,20 @@
         if (id == '') {
             return false;
         }
-        var successCallback = arguments[1] ? arguments[1] : (function(data){console.log(data)});
-        var errorCallback = arguments[2] ? arguments[2] : (function(id){console.log("get error, id:" + id)});
 
         var transaction = MyIndexedDb.db.transaction([MyIndexedDb.dbName]);
         var objectStore = transaction.objectStore(MyIndexedDb.dbName);
         var request = objectStore.get(id);
 
-        request.onerror = function (e) {
-            (errorCallback && typeof(errorCallback) === "function") && errorCallback(id);
-        };
-        request.onsuccess = function(event) {
+        var errorCallback = arguments[2] ? arguments[2] : (function(id){console.log("get error, id:" + id)});
+        request.onerror = errorCallback;
+        request.onsuccess = arguments[2] ? arguments[2] : (function(event) {
             if(request.result) {
-                (successCallback && typeof(successCallback) === "function") && successCallback(request.result);
+                console.log(request.result);
             } else {
                 console.log("Kenny couldn't be found in your database!");
             }
-        };
+        });
     };
 
     /**
@@ -195,10 +189,10 @@
         };
         var request = objectStore.put(dataInfo);
         request.onsuccess = function(e) {
-            (successCallback && typeof(successCallback) === "function") && successCallback(id);
+            (successCallback && typeof(successCallback) === "function") && successCallback(e);
         };
         request.onerror = function (e) {
-            (errorCallback && typeof(errorCallback) === "function") && errorCallback(id);
+            (errorCallback && typeof(errorCallback) === "function") && errorCallback(e);
         };
 
     };
@@ -224,10 +218,14 @@
         var objectStore = MyIndexedDb.db.transaction(MyIndexedDb.dbName, 'readwrite').objectStore(MyIndexedDb.dbName);
         var request = objectStore.put(data);
         request.onsuccess = function(e) {
-            (successCallback && typeof(successCallback) === "function") && successCallback(id);
+            if (request.result) {
+                (successCallback && typeof(successCallback) === "function") && successCallback(e);
+            } else {
+                MyIndexedDb.add(data, successCallback, errorCallback);
+            }
         };
         request.onerror = function (e) {
-            (errorCallback && typeof(errorCallback) === "function") && errorCallback(id);
+            (errorCallback && typeof(errorCallback) === "function") && errorCallback(e);
         };
     };
 
@@ -249,10 +247,10 @@
         var objectStore = MyIndexedDb.db.transaction(MyIndexedDb.dbName, 'readwrite').objectStore(MyIndexedDb.dbName);
         var request = objectStore.delete(id);
         request.onsuccess = function(e) {
-            (successCallback && typeof(successCallback) === "function") && successCallback(id);
+            (successCallback && typeof(successCallback) === "function") && successCallback(e);
         };
         request.onerror = function (e) {
-            (errorCallback && typeof(errorCallback) === "function") && errorCallback(id);
+            (errorCallback && typeof(errorCallback) === "function") && errorCallback(e);
         };
     };
 
