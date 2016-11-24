@@ -90,7 +90,7 @@
         var hasDataCallback = arguments[0] ? arguments[0] : (function(data){console.log(data); return true;});
         var noDataCallback = arguments[1] ? arguments[1] : (function(){console.log("No more entries!")});
         var objectStore = MyIndexedDb.db.transaction(MyIndexedDb.dbName).objectStore(MyIndexedDb.dbName);
-        objectStore.openCursor().onsuccess = function(event) {
+        objectStore.openCursor(null, 'prev').onsuccess = function(event) {
             var cursor = event.target.result;
             if (cursor) {
                 if(hasDataCallback && typeof(hasDataCallback) === "function"){
@@ -139,7 +139,7 @@
      */
     MyIndexedDb.search = function() {
         var range = arguments[0] ? arguments[0] : '';
-        var order = arguments[0] ? arguments[0] : '';
+        var order = arguments[1] ? arguments[1] : '';
 
         var hasDataCallback = arguments[2] ? arguments[2] : (function(data){console.log(data); return true;});
         var noDataCallback = arguments[3] ? arguments[3] : (function(){console.log("No more entries!")});
@@ -172,8 +172,8 @@
      */
     MyIndexedDb.updateFieldById = function () {
         var id = arguments[0] ? arguments[0] : '';
-        var id = arguments[1] ? arguments[1] : '';
-        var id = arguments[2] ? arguments[2] : '';
+        var key = arguments[1] ? arguments[1] : '';
+        var value = arguments[2] ? arguments[2] : '';
         if (id == '' || key == '' || value == '') {
             return false;
         }
@@ -187,7 +187,7 @@
             dataInfo = e.target.result;
             dataInfo[key] = value;
         };
-        var request = objectStore.put(dataInfo);
+        var request = objectStore.put(dataInfo, id);
         request.onsuccess = function(e) {
             (successCallback && typeof(successCallback) === "function") && successCallback(e);
         };
@@ -216,17 +216,13 @@
         var errorCallback = arguments[3] ? arguments[3] : (function(id){console.log("update fail, id:"+id)});
 
         var objectStore = MyIndexedDb.db.transaction(MyIndexedDb.dbName, 'readwrite').objectStore(MyIndexedDb.dbName);
-        var request = objectStore.put(data);
-        request.onsuccess = function(e) {
-            if (request.result) {
-                (successCallback && typeof(successCallback) === "function") && successCallback(e);
-            } else {
-                MyIndexedDb.add(data, successCallback, errorCallback);
-            }
-        };
-        request.onerror = function (e) {
+        var request = objectStore.put(data, id);
+        request.onsuccess = function(e){
+            (successCallback && typeof(successCallback) === "function") && successCallback(e);
+        }
+        request.onerror = function(e) {
             (errorCallback && typeof(errorCallback) === "function") && errorCallback(e);
-        };
+        }
     };
 
     /**
