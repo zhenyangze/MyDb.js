@@ -2,20 +2,26 @@
     var MyIndexedDb = {};
 
     var indexedDB = win.indexedDB || win.mozIndexedDB || win.webkitIndexedDB;
-    MyIndexedDb.db = indexedDB;
+    MyIndexedDb.db = {};
 
     MyIndexedDb.init = function (dbName, dbVersion) {
         MyIndexedDb.dbName = dbName;
         MyIndexedDb.dbVersion = dbVersion;
 
-        var request = MyIndexedDb.db.open(dbName, dbVersion);
+        var request = indexedDB.open(dbName, dbVersion);
         request.onsuccess = function(e) {
-            console.log("open success");
             MyIndexedDb.db = request.result;
+            var callback = arguments[2] ? arguments[2] : '';
+            if (callback != '') {
+                callback();
+            }
         };
-        request.onupgradeneeded = function(e) {
-            MyIndexedDb.db = e.target.result;
-            MyIndexedDb.indexedDB.objStore = MyIndexedDb.db.createObjectStore(MyIndexedDb.dbName, {keyPath: "id"});
+        request.onupgradeneeded = function(evt) {
+            var objStore = evt.currentTarget.result.createObjectStore(MyIndexedDb.dbName, {keyPath: "id"});
+            var callback = arguments[3] ? arguments[3] : '';
+            if (callback != '') {
+                callback(objStore);
+            }
         }
         request.onfailure = function(e) {
             console.log("connect db error");
@@ -250,5 +256,5 @@
         };
     };
 
-    win.MyIndexedDB = MyIndexedDb;
+    win.MyIndexedDb = MyIndexedDb;
 }(window))
