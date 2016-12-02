@@ -4,6 +4,13 @@ H5中对indexedDB的简单封装
 ## use使用
 在页面中引用此js即可
 
+`注意` indexedDB是异步操作，所有方法调用需要用回调执行．如：
+```
+MyIndexedDB.init(dbName, dbVersion, function(e){
+    MyIndexedDB.add();
+    //...
+});
+```
 ##init 初始化
 ```jaascript
 var dbName = 'user';
